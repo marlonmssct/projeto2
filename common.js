@@ -1,81 +1,98 @@
 // ==========================================================================
 // ARQUIVO: common.js
-// FUNÇÕES UTILITÁRIAS, CONFIGURAÇÕES DA API E MANIPULAÇÃO DE INTERFACE
+// FUNÇÕES UTILITÁRIAS E CONFIGURAÇÕES BÁSICAS
 // ==========================================================================
 
-// PASSO 1: Defina a URL base para comunicação com o json-server
-// Exemplo: const API_URL = "http://localhost:3000";
+// URL base da nossa API REST fake (json-server)
 const API_URL = "http://localhost:3000";
 
 /**
- * PASSO 2: Função trocarAba(abaId)
- * Esta função deve alternar a exibição das seções da página.
+ * PASSO 1: Função trocarAba(abaId)
+ * Esta função alterna a aba visível na tela quando o usuário clica nos botões do menu.
  * 
- * Etapas a implementar:
- * 1. Selecionar todos os botões de abas (.nav-tab) e remover a classe 'active' de todos.
- * 2. Selecionar todos os painéis (.tab-panel) e remover a classe 'active' de todos.
- * 3. Selecionar o botão da aba clicada e adicionar a classe 'active'.
- * 4. Selecionar o painel correspondente ao abaId e adicionar a classe 'active'.
- * 5. Se abaId === "tab-perguntas", chamar a função carregarPerguntas().
- * 6. Se abaId === "tab-formularios", chamar a função carregarFormularios().
- * 7. Se abaId === "tab-responder", chamar carregarSelectFormulariosParaResponder().
- * 8. Se abaId === "tab-respostas", chamar carregarSelectFormulariosParaRespostas().
+ * Como pensar na lógica:
+ * 1. Selecionar todos os botões com a classe '.nav-tab' e remover a classe 'active'.
+ * 2. Selecionar todas as seções com a classe '.tab-panel' e remover a classe 'active' (para esconder).
+ * 3. Procurar o botão clicado e a seção com o id 'abaId' e adicionar a classe 'active'.
+ * 4. Usar 'if' para saber qual aba abriu e chamar a função de carregar os dados daquela tela.
  */
+
+
 function trocarAba(abaId) {
-  // TODO: Escreva o seu código aqui!
+  // 1. Pegamos todos os botões e todos os painéis
+  const botoes = document.querySelectorAll(".nav-tab");
+  const paineis = document.querySelectorAll(".tab-panel");
+
+  // 2. Removemos a classe 'active' de cada um deles
+  botoes.forEach(botao => botao.classList.remove("active"));
+  paineis.forEach(painel => painel.classList.remove("active"));
+
+  // 3. Pegamos a seção da aba clicada e adicionamos a classe 'active'
+  const painelSelecionado = document.getElementById(abaId);
+  if (painelSelecionado) {
+    painelSelecionado.classList.add("active");
+  }
+
+  // 4. Verificamos qual aba foi aberta e chamamos a função correspondente
+  if (abaId === "tab-perguntas") {
+    carregarPerguntas();
+  } else if (abaId === "tab-formularios") {
+    carregarFormularios();
+  } else if (abaId === "tab-responder") {
+    carregarSelectFormulariosParaResponder();
+  } else if (abaId === "tab-respostas") {
+    carregarSelectFormulariosParaRespostas();
+  }
 }
 
 /**
- * PASSO 3: Função mostrarToast(mensagem, tipo)
- * Exibe uma notificação visual (toast) na tela.
- * 
- * Etapas a implementar:
- * 1. Buscar o container de toasts (#toast-container).
- * 2. Criar um elemento <div> com as classes 'toast' e 'toast-' + tipo.
- * 3. Definir o textContent do toast com a mensagem recebida.
- * 4. Adicionar o toast ao container com appendChild.
- * 5. Usar setTimeout para remover o toast após 3.5 segundos.
- */
-function mostrarToast(mensagem, tipo = "success") {
-  // TODO: Escreva o seu código aqui!
-}
-
-/**
- * PASSO 4: Funções para controle de modais
- * abrirModal(modalId) -> Remove a classe 'hidden' do elemento com ID modalId.
- * fecharModal(modalId) -> Adiciona a classe 'hidden' ao elemento com ID modalId.
+ * PASSO 2: Funções para abrir e fechar Modais (janelas flutuantes)
  */
 function abrirModal(modalId) {
-  // TODO: Escreva o seu código aqui!
+  const modal = document.getElementById(modalId);
+  if (modal) {
+    modal.classList.remove("hidden");
+  }
 }
 
 function fecharModal(modalId) {
-  // TODO: Escreva o seu código aqui!
+  const modal = document.getElementById(modalId);
+  if (modal) {
+    modal.classList.add("hidden");
+  }
 }
 
 /**
- * PASSO 5: Função formatarData(dataIso)
- * Converte uma data em formato ISO (ex: "2026-07-01T10:00:00Z") para o padrão brasileiro "DD/MM/YYYY às HH:mm".
- * 
- * Dica:
- * - Use const data = new Date(dataIso);
- * - Extraia dia, mês (+1), ano, horas e minutos.
- * - Use .padStart(2, "0") para colocar o zero na frente se for menor que 10.
+ * PASSO 3: Função formatarData(dataIso)
+ * Recebe uma data em texto (ex: "2026-07-01T10:00:00.000Z") e transforma em "DD/MM/YYYY"
  */
 function formatarData(dataIso) {
-  // TODO: Escreva o seu código aqui!
+  if (!dataIso) return "-";
+  const data = new Date(dataIso);
+  if (isNaN(data.getTime())) return dataIso;
+
+  const dia = String(data.getDate()).padStart(2, "0");
+  const mes = String(data.getMonth() + 1).padStart(2, "0");
+  const ano = data.getFullYear();
+
+  return `${dia}/${mes}/${ano}`;
 }
 
 /**
- * PASSO 6: Função auxiliar fetchAPI(endpoint, opcoes)
- * Executa requisições fetch para o endereço `${API_URL}${endpoint}`.
- * 
- * Etapas a implementar:
- * 1. Retornar fetch(`${API_URL}${endpoint}`, opcoes).
- * 2. No primeiro .then(resposta), verificar se resposta.ok é verdadeiro. Se não for, lançar erro.
- * 3. Retornar resposta.json().
- * 4. No .catch(erro), exibir no console o erro e mostrar um toast ("Não foi possível conectar à API.").
+ * PASSO 4: Função mostrarToast(mensagem, tipo)
+ * Exibe uma notificação amigável na tela.
  */
-function fetchAPI(endpoint, opcoes = {}) {
-  // TODO: Escreva o seu código aqui!
+function mostrarToast(mensagem, tipo = "success") {
+  const container = document.getElementById("toast-container");
+  if (!container) return;
+
+  const toast = document.createElement("div");
+  toast.classList.add("toast", `toast-${tipo}`);
+  toast.textContent = mensagem;
+
+  container.appendChild(toast);
+
+  setTimeout(() => {
+    toast.remove();
+  }, 3500);
 }
