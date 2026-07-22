@@ -13,32 +13,40 @@
 </head>
 <body>
 
-  <!-- Cabeçalho Principal -->
-  <header class="main-header">
-    <div class="header-container">
+  <!-- Cabeçalho / Navegação Principal -->
+  <nav class="main-nav">
+    <div class="nav-container">
+      <!-- Lado Esquerdo: Logo do Sistema -->
       <div class="logo">
         <span class="logo-icon">📋</span>
         <h1>FormBuilder <span>Pro</span></h1>
       </div>
-      <p class="header-subtitle">Plataforma de Criação e Aplicação de Questionários</p>
-    </div>
-  </header>
 
-  <!-- Navegação por Abas -->
-  <nav class="main-nav">
-    <div class="nav-container">
-      <button class="nav-tab active" data-tab="tab-perguntas" onclick="trocarAba('tab-perguntas')">
-        <span class="tab-icon">❓</span> Banco de Perguntas
-      </button>
-      <button class="nav-tab" data-tab="tab-formularios" onclick="trocarAba('tab-formularios')">
-        <span class="tab-icon">📝</span> Formulários
-      </button>
-      <button class="nav-tab" data-tab="tab-responder" onclick="trocarAba('tab-responder')">
-        <span class="tab-icon">✍️</span> Responder Form
-      </button>
-      <button class="nav-tab" data-tab="tab-respostas" onclick="trocarAba('tab-respostas')">
-        <span class="tab-icon">📊</span> Respostas Recebidas
-      </button>
+      <!-- Lado Direito: 2 Campos principais (Home e Gerenciamento) -->
+      <div class="nav-links-right">
+        <!-- Campo 1: Home (Todos os Questionários) -->
+        <button class="nav-tab active" data-tab="tab-responder" onclick="trocarAba('tab-responder')">
+          <span class="tab-icon">🏠</span> Home (Questionários)
+        </button>
+
+        <!-- Campo 2: Gerenciamento (Menu com Banco de Perguntas, Formulários e Respostas) -->
+        <div class="nav-dropdown" id="dropdown-gerenciamento">
+          <button class="nav-tab dropdown-btn" id="btn-gerenciamento" onclick="toggleMenuGerenciamento(event)">
+            <span class="tab-icon">⚙️</span> Gerenciamento <span class="arrow-down">▾</span>
+          </button>
+          <div class="dropdown-menu">
+            <button class="dropdown-item" data-tab="tab-perguntas" onclick="trocarAba('tab-perguntas')">
+              <span>❓</span> Banco de Perguntas
+            </button>
+            <button class="dropdown-item" data-tab="tab-formularios" onclick="trocarAba('tab-formularios')">
+              <span>📝</span> Formulários (Editar/Criar)
+            </button>
+            <button class="dropdown-item" data-tab="tab-respostas" onclick="trocarAba('tab-respostas')">
+              <span>📊</span> Respostas Recebidas
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   </nav>
 
@@ -96,26 +104,31 @@
       </div>
     </section>
 
-    <!-- ABA 3: RESPONDER FORMULÁRIO -->
-    <section id="tab-responder" class="tab-panel">
+    <!-- ABA 3: HOME / QUESTIONÁRIOS DISPONÍVEIS -->
+    <section id="tab-responder" class="tab-panel active">
       <div class="panel-header">
         <div>
-          <h2>Responder Questionário</h2>
-          <p>Selecione um formulário ativo para preencher suas respostas.</p>
+          <h2>Questionários Disponíveis</h2>
+          <p>Escolha um dos questionários publicados abaixo para responder e enviar seus dados.</p>
         </div>
       </div>
 
-      <!-- Seletor de Formulário Ativo -->
-      <div class="form-selector-card">
-        <label for="select-form-responder">Escolha o formulário que deseja responder:</label>
-        <select id="select-form-responder" onchange="carregarFormularioParaResponder(this.value)">
-          <option value="">-- Selecione um formulário publicado --</option>
-        </select>
+      <!-- Campo de Busca Autocomplete -->
+      <div class="search-filter-card" id="card-busca-home">
+        <div class="search-input-wrapper">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="busca-questionario-home" placeholder="Buscar questionário por título ou palavra-chave..." oninput="filtrarQuestionariosHome(this.value)">
+        </div>
       </div>
 
-      <!-- Container do Formulário Dinâmico -->
-      <div id="container-responder-form" class="responder-container hidden">
+      <!-- Grid de Cards dos Questionários -->
+      <div id="grid-questionarios-home" class="cards-grid">
         <!-- Preenchido via responder.js -->
+      </div>
+
+      <!-- Container do Formulário de Preenchimento -->
+      <div id="container-responder-form" class="responder-container hidden">
+        <!-- Preenchido via responder.js ao clicar em um card -->
       </div>
     </section>
 

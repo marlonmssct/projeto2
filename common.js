@@ -18,14 +18,50 @@ const API_URL = "http://localhost:3000";
  */
 
 
+function toggleMenuGerenciamento(e) {
+  if (e) e.stopPropagation();
+  const dropdown = document.getElementById("dropdown-gerenciamento");
+  if (dropdown) {
+    dropdown.classList.toggle("open");
+  }
+}
+
+// Fecha o menu suspenso de Gerenciamento ao clicar em qualquer lugar fora dele
+document.addEventListener("click", (e) => {
+  const dropdown = document.getElementById("dropdown-gerenciamento");
+  if (dropdown && !dropdown.contains(e.target)) {
+    dropdown.classList.remove("open");
+  }
+});
+
 function trocarAba(abaId) {
-  // 1. Pegamos todos os botões e todos os painéis
-  const botoes = document.querySelectorAll(".nav-tab");
+  // Fecha o menu de gerenciamento se estiver aberto
+  const dropdown = document.getElementById("dropdown-gerenciamento");
+  if (dropdown) {
+    dropdown.classList.remove("open");
+  }
+
+  // 1. Pegamos todos os botões da barra e itens do dropdown
+  const botoes = document.querySelectorAll(".nav-tab, .dropdown-item");
   const paineis = document.querySelectorAll(".tab-panel");
 
-  // 2. Removemos a classe 'active' de cada um deles
+  // 2. Removemos a classe 'active' de todos
   botoes.forEach(botao => botao.classList.remove("active"));
   paineis.forEach(painel => painel.classList.remove("active"));
+
+  // Destacamos o item selecionado
+  const itemClicado = document.querySelector(`[data-tab="${abaId}"]`);
+  if (itemClicado) {
+    itemClicado.classList.add("active");
+  }
+
+  // Se a aba for uma das telas de gestão, destacamos o botão principal "Gerenciamento"
+  const btnGerenciamento = document.getElementById("btn-gerenciamento");
+  if (btnGerenciamento) {
+    if (abaId === "tab-perguntas" || abaId === "tab-formularios" || abaId === "tab-respostas") {
+      btnGerenciamento.classList.add("active");
+    }
+  }
 
   // 3. Pegamos a seção da aba clicada e adicionamos a classe 'active'
   const painelSelecionado = document.getElementById(abaId);

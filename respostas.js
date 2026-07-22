@@ -57,9 +57,12 @@ function renderizarTabelaRespostas(respostas) {
       <td><strong>${resposta.nome}</strong></td>
       <td>${resposta.email}</td>
       <td>${formatarData(resposta.enviadoEm)}</td>
-      <td class="text-right">
+      <td class="text-right" style="display: flex; gap: 6px; justify-content: flex-end;">
         <button class="btn btn-primary btn-sm" onclick="visualizarDetalhesResposta('${resposta.id}')">
-          👁️ Ver Respostas Dadas
+          👁️ Ver Respostas
+        </button>
+        <button class="btn btn-danger btn-sm" onclick="excluirRespostaReceived('${resposta.id}')">
+          🗑️ Excluir
         </button>
       </td>
     `;
@@ -112,4 +115,18 @@ function visualizarDetalhesResposta(respostaId) {
       container.innerHTML = html;
       abrirModal("modal-resposta-detalhes");
     });
+}
+
+function excluirRespostaReceived(respostaId) {
+  if (confirm("Tem certeza que deseja excluir esta resposta recebida do banco de dados?")) {
+    fetch(`${API_URL}/respostas/${respostaId}`, { method: "DELETE" })
+      .then(() => {
+        mostrarToast("Resposta excluída com sucesso!", "success");
+        const select = document.getElementById("select-form-respostas");
+        if (select && select.value) {
+          carregarRespostasDoFormulario(select.value);
+        }
+      })
+      .catch(() => mostrarToast("Erro ao excluir resposta.", "error"));
+  }
 }

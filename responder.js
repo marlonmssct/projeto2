@@ -1,36 +1,103 @@
 // ==========================================================================
 // ARQUIVO: responder.js
-// PREENCHIMENTO PÚBLICO DE QUESTIONÁRIOS
+// PREENCHIMENTO PÚBLICO DE QUESTIONÁRIOS NA HOME
 // ==========================================================================
 
 let formularioAtualResponder = null;
 let perguntasFormularioAtual = [];
+let listaQuestionariosHome = [];
 
 function carregarSelectFormulariosParaResponder() {
-  const select = document.getElementById("select-form-responder");
-  if (!select) return;
-
   fetch(`${API_URL}/formularios`)
     .then(resp => resp.json())
     .then(formularios => {
-      const publicados = formularios.filter(f => f.status === "publicado");
-
-      let html = `<option value="">-- Selecione um formulário publicado --</option>`;
-      publicados.forEach(f => {
-        html += `<option value="${f.id}">${f.titulo}</option>`;
-      });
-
-      select.innerHTML = html;
+      // Filtra apenas formulários com status === 'publicado'
+      listaQuestionariosHome = formularios.filter(f => f.status === "publicado");
+      renderizarCardsQuestionariosHome(listaQuestionariosHome);
+    })
+    .catch(() => {
+      const grid = document.getElementById("grid-questionarios-home");
+      if (grid) {
+        grid.innerHTML = `<p style="color: var(--danger-color); grid-column: 1/-1;">Erro ao carregar questionários. Verifique se o json-server está rodando.</p>`;
+      }
     });
+}
+
+function renderizarCardsQuestionariosHome(questionarios) {
+  const grid = document.getElementById("grid-questionarios-home");
+  if (!grid) return;
+
+  grid.innerHTML = "";
+
+  if (!questionarios || questionarios.length === 0) {
+    grid.innerHTML = `
+      <div style="grid-column: 1/-1; text-align: center; padding: 40px; background: white; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+        <p style="font-size: 16px; color: var(--text-muted);">Nenhum questionário publicado encontrado.</p>
+      </div>
+    `;
+    return;
+  }
+
+  questionarios.forEach(form => {
+    const card = document.createElement("div");
+    card.classList.add("form-card");
+
+    const qtdPerguntas = form.perguntas ? form.perguntas.length : 0;
+
+    card.innerHTML = `
+      <div>
+        <div class="form-card-header">
+          <span class="form-card-title">${form.titulo}</span>
+          <span class="badge badge-publicado">Publicado</span>
+        </div>
+        <p class="form-card-desc">${form.descricao || "Sem descrição informada."}</p>
+        <div class="form-card-meta">
+          <span>❓ <strong>${qtdPerguntas}</strong> pergunta(s)</span>
+          <span>📅 Início: ${formatarData(form.dataInicio)}</span>
+          <span>🏁 Fim: ${formatarData(form.dataFim)}</span>
+        </div>
+      </div>
+      <div class="form-card-actions" style="margin-top: 16px;">
+        <button class="btn btn-primary" style="width: 100%; justify-content: center;" onclick="carregarFormularioParaResponder('${form.id}')">
+          ✍️ Responder Questionário
+        </button>
+      </div>
+    `;
+
+    grid.appendChild(card);
+  });
+}
+
+function filtrarQuestionariosHome(termo) {
+  const termoFormatado = termo.toLowerCase().trim();
+  const filtrados = listaQuestionariosHome.filter(form => {
+    const tituloMatch = form.titulo && form.titulo.toLowerCase().includes(termoFormatado);
+    const descMatch = form.descricao && form.descricao.toLowerCase().includes(termoFormatado);
+    return tituloMatch || descMatch;
+  });
+  renderizarCardsQuestionariosHome(filtrados);
+}
+
+function voltarParaListaQuestionarios() {
+  document.getElementById("container-responder-form").classList.add("hidden");
+  document.getElementById("container-responder-form").innerHTML = "";
+
+  const grid = document.getElementById("grid-questionarios-home");
+  const busca = document.getElementById("card-busca-home");
+
+  if (grid) grid.classList.remove("hidden");
+  if (busca) busca.classList.remove("hidden");
 }
 
 function carregarFormularioParaResponder(formularioId) {
   const container = document.getElementById("container-responder-form");
+  const grid = document.getElementById("grid-questionarios-home");
+  const busca = document.getElementById("card-busca-home");
+
   if (!container) return;
 
   if (!formularioId) {
-    container.classList.add("hidden");
-    container.innerHTML = "";
+    voltarParaListaQuestionarios();
     return;
   }
 
@@ -41,13 +108,11 @@ function carregarFormularioParaResponder(formularioId) {
 
       const agora = new Date();
       if (form.dataInicio && new Date(form.dataInicio) > agora) {
-        container.classList.remove("hidden");
-        container.innerHTML = `<p style="color: red; padding: 20px;">Este formulário ainda não está disponível para respostas. Vigência inicia em ${formatarData(form.dataInicio)}.</p>`;
+        mostrarToast("Este formulário ainda não está aberto para respostas.", "warning");
         return;
       }
       if (form.dataFim && new Date(form.dataFim) < agora) {
-        container.classList.remove("hidden");
-        container.innerHTML = `<p style="color: red; padding: 20px;">Este formulário encontra-se encerrado. O prazo expirou em ${formatarData(form.dataFim)}.</p>`;
+        mostrarToast("Este formulário já encontra-se encerrado.", "warning");
         return;
       }
 
@@ -58,6 +123,9 @@ function carregarFormularioParaResponder(formularioId) {
             form.perguntas && form.perguntas.map(String).includes(String(p.id))
           );
 
+          if (grid) grid.classList.add("hidden");
+          if (busca) busca.classList.add("hidden");
+
           renderizarFormularioPreenchimento(container, form, perguntasFormularioAtual);
         });
     });
@@ -67,6 +135,12 @@ function renderizarFormularioPreenchimento(container, form, perguntas) {
   container.classList.remove("hidden");
 
   let html = `
+    <div style="margin-bottom: 20px;">
+      <button type="button" class="btn btn-light btn-sm" onclick="voltarParaListaQuestionarios()">
+        ← Voltar para lista de questionários
+      </button>
+    </div>
+
     <div class="responder-header">
       <h3>${form.titulo}</h3>
       <p style="color: var(--text-muted);">${form.descricao || "Preencha os campos abaixo com atenção."}</p>
@@ -227,8 +301,7 @@ function enviarRespostaQuestionario(e) {
       })
       .then(() => {
         mostrarToast("Sua resposta foi enviada com sucesso! Obrigado.", "success");
-        document.getElementById("container-responder-form").classList.add("hidden");
-        document.getElementById("select-form-responder").value = "";
+        voltarParaListaQuestionarios();
       });
     });
 }
