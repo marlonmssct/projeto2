@@ -1,11 +1,303 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-br">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Github</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sistema de Questionários - API fake json-server</title>
+  <!-- Estilos principais da aplicação -->
+  <link rel="stylesheet" href="style.css">
+  <!-- Fonte moderna do Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-    
+
+  <!-- Cabeçalho Principal -->
+  <header class="main-header">
+    <div class="header-container">
+      <div class="logo">
+        <span class="logo-icon">📋</span>
+        <h1>FormBuilder <span>Pro</span></h1>
+      </div>
+      <p class="header-subtitle">Plataforma de Criação e Aplicação de Questionários</p>
+    </div>
+  </header>
+
+  <!-- Navegação por Abas -->
+  <nav class="main-nav">
+    <div class="nav-container">
+      <button class="nav-tab active" data-tab="tab-perguntas" onclick="trocarAba('tab-perguntas')">
+        <span class="tab-icon">❓</span> Banco de Perguntas
+      </button>
+      <button class="nav-tab" data-tab="tab-formularios" onclick="trocarAba('tab-formularios')">
+        <span class="tab-icon">📝</span> Formulários
+      </button>
+      <button class="nav-tab" data-tab="tab-responder" onclick="trocarAba('tab-responder')">
+        <span class="tab-icon">✍️</span> Responder Form
+      </button>
+      <button class="nav-tab" data-tab="tab-respostas" onclick="trocarAba('tab-respostas')">
+        <span class="tab-icon">📊</span> Respostas Recebidas
+      </button>
+    </div>
+  </nav>
+
+  <!-- Conteúdo Principal com Seções das Abas -->
+  <main class="main-content">
+
+    <!-- ABA 1: BANCO DE PERGUNTAS -->
+    <section id="tab-perguntas" class="tab-panel active">
+      <div class="panel-header">
+        <div>
+          <h2>Banco de Perguntas Reutilizáveis</h2>
+          <p>Cadastre perguntas que poderão compor um ou mais formulários.</p>
+        </div>
+        <button class="btn btn-primary" onclick="abrirModalPergunta()">
+          <span>+</span> Nova Pergunta
+        </button>
+      </div>
+
+      <!-- Tabela de Perguntas -->
+      <div class="card-table-wrapper">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Enunciado</th>
+              <th>Tipo</th>
+              <th>Obrigatória?</th>
+              <th>Alternativas</th>
+              <th>Criada Em</th>
+              <th class="text-right">Ações</th>
+            </tr>
+          </thead>
+          <tbody id="tabela-perguntas">
+            <!-- Conteúdo dinâmico via JS -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ABA 2: FORMULÁRIOS -->
+    <section id="tab-formularios" class="tab-panel">
+      <div class="panel-header">
+        <div>
+          <h2>Gestão de Formulários</h2>
+          <p>Monte formulários associando perguntas cadastradas e definindo prazos.</p>
+        </div>
+        <button class="btn btn-primary" onclick="abrirModalFormulario()">
+          <span>+</span> Novo Formulário
+        </button>
+      </div>
+
+      <!-- Grid de Cards de Formulários -->
+      <div id="grid-formularios" class="cards-grid">
+        <!-- Conteúdo dinâmico via JS -->
+      </div>
+    </section>
+
+    <!-- ABA 3: RESPONDER FORMULÁRIO -->
+    <section id="tab-responder" class="tab-panel">
+      <div class="panel-header">
+        <div>
+          <h2>Responder Questionário</h2>
+          <p>Selecione um formulário ativo para preencher suas respostas.</p>
+        </div>
+      </div>
+
+      <!-- Seletor de Formulário Ativo -->
+      <div class="form-selector-card">
+        <label for="select-form-responder">Escolha o formulário que deseja responder:</label>
+        <select id="select-form-responder" onchange="carregarFormularioParaResponder(this.value)">
+          <option value="">-- Selecione um formulário publicado --</option>
+        </select>
+      </div>
+
+      <!-- Container do Formulário Dinâmico -->
+      <div id="container-responder-form" class="responder-container hidden">
+        <!-- Preenchido via responder.js -->
+      </div>
+    </section>
+
+    <!-- ABA 4: RESPOSTAS RECEBIDAS -->
+    <section id="tab-respostas" class="tab-panel">
+      <div class="panel-header">
+        <div>
+          <h2>Painel de Respostas Recebidas</h2>
+          <p>Consulte os envios recebidos por formulário.</p>
+        </div>
+        <div class="filter-group">
+          <label for="select-form-respostas">Filtrar por Formulário:</label>
+          <select id="select-form-respostas" onchange="carregarRespostasDoFormulario(this.value)">
+            <option value="">-- Selecione um formulário --</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Tabela de Respostas -->
+      <div class="card-table-wrapper">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Respondente</th>
+              <th>E-mail</th>
+              <th>Data do Envio</th>
+              <th class="text-right">Ações</th>
+            </tr>
+          </thead>
+          <tbody id="tabela-respostas">
+            <!-- Conteúdo dinâmico via JS -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- MODAL: NOVA / EDITAR PERGUNTA -->
+  <div id="modal-pergunta" class="modal-overlay hidden">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="modal-pergunta-titulo">Nova Pergunta</h3>
+        <button class="modal-close" onclick="fecharModal('modal-pergunta')">&times;</button>
+      </div>
+      <form id="form-pergunta" onsubmit="salvarPergunta(event)">
+        <input type="hidden" id="pergunta-id">
+        
+        <div class="form-group">
+          <label for="pergunta-enunciado">Enunciado da Pergunta *</label>
+          <input type="text" id="pergunta-enunciado" placeholder="Ex: Qual sua linguagem de programação favorita?" required>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group flex-1">
+            <label for="pergunta-tipo">Tipo de Resposta *</label>
+            <select id="pergunta-tipo" onchange="atualizarOpcoesTipoPergunta(this.value)" required>
+              <option value="texto_curto">Texto Curto (até 200 caracteres)</option>
+              <option value="texto_longo">Texto Longo (parágrafo sem limite)</option>
+              <option value="multipla_escolha">Múltipla Escolha (1 opção)</option>
+              <option value="checkbox">Checkbox (múltiplas opções)</option>
+            </select>
+          </div>
+
+          <div class="form-group flex-1 flex-center-vertical">
+            <label class="checkbox-container">
+              <input type="checkbox" id="pergunta-obrigatoria" checked>
+              <span class="checkmark"></span>
+              <strong>Resposta Obrigatória?</strong>
+            </label>
+          </div>
+        </div>
+
+        <!-- Seção de Alternativas (para múltipla escolha ou checkbox) -->
+        <div id="secao-alternativas" class="alternativas-wrapper hidden">
+          <div class="alternativas-header">
+            <h4>Alternativas de Resposta</h4>
+            <span id="alternativas-dica" class="badge-info">Defina as opções</span>
+          </div>
+          <div id="container-lista-alternativas" class="lista-alternativas">
+            <!-- Inputs dinâmicos de alternativas -->
+          </div>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="adicionarCampoAlternativa()">
+            + Adicionar Alternativa
+          </button>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-light" onclick="fecharModal('modal-pergunta')">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Salvar Pergunta</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: NOVO / EDITAR FORMULÁRIO -->
+  <div id="modal-formulario" class="modal-overlay hidden">
+    <div class="modal-card modal-lg">
+      <div class="modal-header">
+        <h3 id="modal-formulario-titulo">Novo Formulário</h3>
+        <button class="modal-close" onclick="fecharModal('modal-formulario')">&times;</button>
+      </div>
+      <form id="form-formulario" onsubmit="salvarFormulario(event)">
+        <input type="hidden" id="formulario-id">
+
+        <div class="form-group">
+          <label for="formulario-titulo-input">Título do Formulário *</label>
+          <input type="text" id="formulario-titulo-input" placeholder="Ex: Pesquisa de Satisfação de Clientes" required>
+        </div>
+
+        <div class="form-group">
+          <label for="formulario-descricao">Descrição (Opcional)</label>
+          <textarea id="formulario-descricao" rows="2" placeholder="Explique brevemente o objetivo deste formulário..."></textarea>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group flex-1">
+            <label for="formulario-status">Status do Formulário *</label>
+            <select id="formulario-status" required>
+              <option value="rascunho">Rascunho (Em edição)</option>
+              <option value="publicado">Publicado (Disponível para respostas)</option>
+              <option value="encerrado">Encerrado (Bloqueado)</option>
+            </select>
+          </div>
+
+          <div class="form-group flex-1">
+            <label for="formulario-datainicio">Data Inicial de Vigência</label>
+            <input type="datetime-local" id="formulario-datainicio">
+          </div>
+
+          <div class="form-group flex-1">
+            <label for="formulario-datafim">Data Final de Vigência</label>
+            <input type="datetime-local" id="formulario-datafim">
+          </div>
+        </div>
+
+        <!-- Seleção de Perguntas -->
+        <div class="form-group">
+          <label>Selecione as Perguntas que Compõem este Formulário * (mínimo 1)</label>
+          <div id="container-selecao-perguntas" class="checklist-perguntas">
+            <!-- Checkboxes de perguntas gerados dinamicamente via JS -->
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-light" onclick="fecharModal('modal-formulario')">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Salvar Formulário</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: DETALHES DA RESPOSTA RECEBIDA -->
+  <div id="modal-resposta-detalhes" class="modal-overlay hidden">
+    <div class="modal-card modal-lg">
+      <div class="modal-header">
+        <h3>Detalhes da Resposta</h3>
+        <button class="modal-close" onclick="fecharModal('modal-resposta-detalhes')">&times;</button>
+      </div>
+      <div id="conteudo-detalhes-resposta" class="detalhes-resposta-body">
+        <!-- Preenchido via respostas.js -->
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" onclick="fecharModal('modal-resposta-detalhes')">Fechar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Container de Notificações Toast -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <!-- Rodapé Institucional -->
+  <footer class="main-footer">
+    <p>&copy; 2026 FormBuilder Pro - Sistema de Questionários e Pesquisas</p>
+  </footer>
+
+  <!-- Scripts JavaScript (Módulos da Aplicação) -->
+  <script src="common.js"></script>
+  <script src="perguntas.js"></script>
+  <script src="formularios.js"></script>
+  <script src="responder.js"></script>
+  <script src="respostas.js"></script>
 </body>
 </html>
