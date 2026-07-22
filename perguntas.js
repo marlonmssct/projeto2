@@ -16,96 +16,246 @@ let listaPerguntas = [];
  * 3. No segundo .then(dados => { ... }):
  *    - Guardar dados na variável global `listaPerguntas`
  *    - Chamar renderizarTabelaPerguntas(dados)
+ 
  */
+
+
+
+
 function carregarPerguntas() {
-  // TODO: Escreva o seu código aqui!
+  fetch(`${API_URL}/perguntas`)
+    .then(resp => resp.json())
+    .then(dados => {
+      listaPerguntas = dados;
+      renderizarTabelaPerguntas(dados);
+    })
+    .catch(() => {
+      const tabela = document.getElementById("tabela-perguntas");
+      if (tabela) {
+        tabela.innerHTML = `<tr><td colspan="7" style="color: red; text-align: center;">Erro ao carregar dados. Verifique se o servidor está rodando.</td></tr>`;
+      }
+    });
 }
 
-/**
- * EXERCÍCIO 2: Função renderizarTabelaPerguntas(perguntas)
- * Desenha as linhas da tabela de perguntas no HTML.
- * 
- * Como fazer:
- * 1. Pegar a tabela pelo id: const tabela = document.getElementById("tabela-perguntas");
- * 2. Limpar a tabela: tabela.innerHTML = "";
- * 3. Percorrer o array de perguntas com .forEach(pergunta => { ... }):
- *    - Criar uma linha: const linha = document.createElement("tr");
- *    - Definir linha.innerHTML com as colunas (id, enunciado, tipo, obrigatoria, botões Editar e Excluir)
- *    - Colocar na tabela: tabela.appendChild(linha);
- */
 function renderizarTabelaPerguntas(perguntas) {
-  // TODO: Escreva o seu código aqui!
+  const tabela = document.getElementById("tabela-perguntas");
+  if (!tabela) return;
+
+  tabela.innerHTML = "";
+
+  if (!perguntas || perguntas.length === 0) {
+    tabela.innerHTML = `<tr><td colspan="7" style="text-align: center;">Nenhuma pergunta cadastrada até o momento.</td></tr>`;
+    return;
+  }
+
+  perguntas.forEach(pergunta => {
+    let tipoFormatado = pergunta.tipo;
+    if (pergunta.tipo === "multipla_escolha") tipoFormatado = "Múltipla Escolha";
+    else if (pergunta.tipo === "checkbox") tipoFormatado = "Checkbox";
+    else if (pergunta.tipo === "texto_curto") tipoFormatado = "Texto Curto";
+    else if (pergunta.tipo === "texto_longo") tipoFormatado = "Texto Longo";
+
+    let textoAlternativas = "-";
+    if (pergunta.alternativas && pergunta.alternativas.length > 0) {
+      textoAlternativas = pergunta.alternativas.join(", ");
+    }
+
+    const linha = document.createElement("tr");
+    linha.innerHTML = `
+      <td><strong>#${pergunta.id}</strong></td>
+      <td>${pergunta.enunciado}</td>
+      <td><span class="badge badge-tipo">${tipoFormatado}</span></td>
+      <td>${pergunta.obrigatoria ? "✔️ Sim" : "❌ Não"}</td>
+      <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${textoAlternativas}</td>
+      <td>${formatarData(pergunta.criadaEm)}</td>
+      <td class="text-right">
+        <button class="btn btn-light btn-sm" onclick="prepararEdicaoPergunta('${pergunta.id}')">✏️ Editar</button>
+        <button class="btn btn-danger btn-sm" onclick="excluirPergunta('${pergunta.id}')">🗑️ Excluir</button>
+      </td>
+    `;
+    tabela.appendChild(linha);
+  });
 }
 
-/**
- * EXERCÍCIO 3: Função abrirModalPergunta()
- * Prepara e abre a janela para criar uma nova pergunta.
- * 
- * Como fazer:
- * 1. Limpar o formulário: document.getElementById("form-pergunta").reset();
- * 2. Limpar o ID oculto: document.getElementById("pergunta-id").value = "";
- * 3. Mudar o título: document.getElementById("modal-pergunta-titulo").textContent = "Nova Pergunta";
- * 4. Chamar abrirModal("modal-pergunta");
- */
 function abrirModalPergunta() {
-  // TODO: Escreva o seu código aqui!
+  document.getElementById("form-pergunta").reset();
+  document.getElementById("pergunta-id").value = "";
+  document.getElementById("modal-pergunta-titulo").textContent = "Nova Pergunta";
+  atualizarOpcoesTipoPergunta(document.getElementById("pergunta-tipo").value);
+  abrirModal("modal-pergunta");
 }
 
-/**
- * EXERCÍCIO 4: Função atualizarOpcoesTipoPergunta(tipo)
- * Mostra ou esconde o campo de alternativas dependendo do tipo selecionado no <select>.
- * 
- * Regra:
- * - Se tipo for "texto_curto" ou "texto_longo": esconder a div de alternativas (#secao-alternativas).
- * - Se for "multipla_escolha" ou "checkbox": mostrar a div de alternativas.
- */
 function atualizarOpcoesTipoPergunta(tipo) {
-  // TODO: Escreva o seu código aqui!
+  const secaoAlternativas = document.getElementById("secao-alternativas");
+  const dica = document.getElementById("alternativas-dica");
+  if (!secaoAlternativas) return;
+
+  if (tipo === "texto_curto" || tipo === "texto_longo") {
+    secaoAlternativas.classList.add("hidden");
+    document.getElementById("container-lista-alternativas").innerHTML = "";
+    return;
+  }
+
+  secaoAlternativas.classList.remove("hidden");
+
+  if (tipo === "multipla_escolha") {
+    dica.textContent = "Requer entre 2 e 10 alternativas";
+  } else if (tipo === "checkbox") {
+    dica.textContent = "Requer entre 3 e 15 alternativas";
+  }
+
+  const container = document.getElementById("container-lista-alternativas");
+  if (container.children.length === 0) {
+    const qtdInicial = tipo === "checkbox" ? 3 : 2;
+    for (let i = 0; i < qtdInicial; i++) {
+      adicionarCampoAlternativa();
+    }
+  }
 }
 
-/**
- * EXERCÍCIO 5: Função adicionarCampoAlternativa(valorInicial = "")
- * Cria um novo input de texto dentro do container de alternativas (#container-lista-alternativas).
- */
 function adicionarCampoAlternativa(valorInicial = "") {
-  // TODO: Escreva o seu código aqui!
+  const container = document.getElementById("container-lista-alternativas");
+  if (!container) return;
+
+  const div = document.createElement("div");
+  div.classList.add("item-alternativa");
+
+  div.innerHTML = `
+    <input type="text" class="input-alternativa" value="${valorInicial}" placeholder="Digite a opção..." required>
+    <button type="button" class="btn btn-danger btn-sm" onclick="this.parentElement.remove()">✕</button>
+  `;
+
+  container.appendChild(div);
 }
 
-/**
- * EXERCÍCIO 6: Função salvarPergunta(e)
- * Disparada quando o formulário de pergunta é enviado (submit).
- * 
- * Regras e Etapas:
- * 1. e.preventDefault();
- * 2. Pegar os valores de enunciado, tipo, obrigatoria.
- * 3. Validação: se enunciado estiver vazio, usar alert("Preencha o enunciado!");
- * 4. Se for múltipla escolha ou checkbox, pegar os valores dos inputs de alternativa.
- *    - Múltipla escolha: precisa ter no mínimo 2 alternativas.
- *    - Checkbox: precisa ter no mínimo 3 alternativas.
- * 5. Montar o objeto `pergunta`.
- * 6. Se tiver id: fazer fetch (PUT) na URL `${API_URL}/perguntas/${id}`.
- * 7. Se não tiver id: fazer fetch (POST) na URL `${API_URL}/perguntas`.
- * 8. No .then(): fechar o modal e chamar carregarPerguntas().
- */
 function salvarPergunta(e) {
-  // TODO: Escreva o seu código aqui!
+  e.preventDefault();
+
+  const id = document.getElementById("pergunta-id").value;
+  const enunciado = document.getElementById("pergunta-enunciado").value.trim();
+  const tipo = document.getElementById("pergunta-tipo").value;
+  const obrigatoria = document.getElementById("pergunta-obrigatoria").checked;
+
+  if (!enunciado) {
+    mostrarToast("Preencha o enunciado da pergunta!", "warning");
+    return;
+  }
+
+  let alternativas = [];
+  if (tipo === "multipla_escolha" || tipo === "checkbox") {
+    const inputs = document.querySelectorAll(".input-alternativa");
+    inputs.forEach(input => {
+      const val = input.value.trim();
+      if (val) alternativas.push(val);
+    });
+
+    if (tipo === "multipla_escolha" && (alternativas.length < 2 || alternativas.length > 10)) {
+      mostrarToast("Múltipla escolha deve ter entre 2 e 10 alternativas.", "warning");
+      return;
+    }
+
+    if (tipo === "checkbox" && (alternativas.length < 3 || alternativas.length > 15)) {
+      mostrarToast("Checkbox deve ter entre 3 e 15 alternativas.", "warning");
+      return;
+    }
+  }
+
+  const pergunta = {
+    enunciado: enunciado,
+    tipo: tipo,
+    obrigatoria: obrigatoria,
+    criadaEm: new Date().toISOString()
+  };
+
+  if (tipo === "multipla_escolha" || tipo === "checkbox") {
+    pergunta.alternativas = alternativas;
+  }
+
+  if (id) {
+    pergunta.id = id;
+    fetch(`${API_URL}/perguntas/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(pergunta)
+    })
+      .then(() => {
+        mostrarToast("Pergunta atualizada com sucesso!", "success");
+        fecharModal("modal-pergunta");
+        carregarPerguntas();
+      })
+      .catch(() => mostrarToast("Erro ao atualizar pergunta.", "error"));
+  } else {
+    fetch(`${API_URL}/perguntas`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(pergunta)
+    })
+      .then(() => {
+        mostrarToast("Pergunta salva com sucesso!", "success");
+        fecharModal("modal-pergunta");
+        carregarPerguntas();
+      })
+      .catch(() => mostrarToast("Erro ao salvar pergunta.", "error"));
+  }
 }
 
-/**
- * EXERCÍCIO 7: Função prepararEdicaoPergunta(id)
- * Busca a pergunta no array `listaPerguntas` pelo ID e preenche o formulário.
- */
 function prepararEdicaoPergunta(id) {
-  // TODO: Escreva o seu código aqui!
+  const pergunta = listaPerguntas.find(p => String(p.id) === String(id));
+  if (!pergunta) return;
+
+  document.getElementById("pergunta-id").value = pergunta.id;
+  document.getElementById("pergunta-enunciado").value = pergunta.enunciado;
+  document.getElementById("pergunta-tipo").value = pergunta.tipo;
+  document.getElementById("pergunta-obrigatoria").checked = pergunta.obrigatoria;
+  document.getElementById("modal-pergunta-titulo").textContent = "Editar Pergunta";
+
+  atualizarOpcoesTipoPergunta(pergunta.tipo);
+
+  const container = document.getElementById("container-lista-alternativas");
+  if (container) {
+    container.innerHTML = "";
+    if (pergunta.alternativas && pergunta.alternativas.length > 0) {
+      pergunta.alternativas.forEach(alt => {
+        adicionarCampoAlternativa(alt);
+      });
+    }
+  }
+
+  abrirModal("modal-pergunta");
 }
 
-/**
- * EXERCÍCIO 8: Função excluirPergunta(id)
- * Exclui a pergunta usando fetch com method: "DELETE".
- * 
- * Regra de Negócio:
- * - Pedir confirmação com confirm("Deseja excluir?") antes de deletar!
- */
 function excluirPergunta(id) {
-  // TODO: Escreva o seu código aqui!
+  fetch(`${API_URL}/respostas`)
+    .then(resp => resp.json())
+    .then(respostas => {
+      const jaRespondida = respostas.some(r =>
+        r.respostas && r.respostas.some(item => String(item.perguntaId) === String(id))
+      );
+
+      if (jaRespondida) {
+        mostrarToast("Esta pergunta possui respostas vinculadas e não pode ser excluída.", "error");
+        return;
+      }
+
+      if (confirm("Tem certeza que deseja excluir esta pergunta?")) {
+        fetch(`${API_URL}/perguntas/${id}`, { method: "DELETE" })
+          .then(() => {
+            mostrarToast("Pergunta excluída com sucesso!", "success");
+            carregarPerguntas();
+          })
+          .catch(() => mostrarToast("Erro ao excluir pergunta.", "error"));
+      }
+    })
+    .catch(() => {
+      if (confirm("Tem certeza que deseja excluir esta pergunta?")) {
+        fetch(`${API_URL}/perguntas/${id}`, { method: "DELETE" })
+          .then(() => {
+            mostrarToast("Pergunta excluída com sucesso!", "success");
+            carregarPerguntas();
+          });
+      }
+    });
 }
+
+// Carrega as perguntas automaticamente ao abrir a página
+carregarPerguntas();
